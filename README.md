@@ -4,10 +4,11 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 [![Meta DINOv2](https://img.shields.io/badge/DINOv2-ViT--B%2F14-green.svg)](https://github.com/facebookresearch/dinov2)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Clean Code](https://img.shields.io/badge/Clean%20Code-SOLID%20%2B%20SRP-brightgreen.svg)](#-engenharia-de-software-e-clean-code)
 
-Pipeline de visão computacional e aprendizado profundo voltado à **identificação e classificação automatizada de equipamentos elétricos de subestações de alta tensão a partir de imagens termográficas infravermelhas**.
+Sistema integrado de visão computacional, aprendizado profundo e termografia preditiva voltado à **identificação automática de ativos elétricos de subestações de alta tensão, detecção geométrica de pontos quentes (*hotspots*) e diagnóstico normativo de severidade térmica conforme a ABNT NBR 15572 e NFPA 70B**.
 
-O sistema utiliza o estado da arte em aprendizado auto-supervisionado com o backbone **DINOv2 ViT-B/14 (Meta AI)** para extração direta de embeddings visuais densos de 768 dimensões, sem necessidade de descritores manuais (dispensando SIFT/SURF) e sem modelos híbridos redundantes, garantindo robustez com aceleração **CUDA** (e fallback automático para CPU).
+O sistema combina o estado da arte em representações auto-supervisionadas (**DINOv2 ViT-B/14 da Meta AI**) com um motor determinístico de regras de manutenção baseado em normas técnicas brasileiras e internacionais.
 
 ---
 
@@ -24,6 +25,26 @@ O dataset é composto por inspeções termográficas reais de 5 classes de ativo
 | **Power Transformers** (Transformadores) | Conversão dos níveis de tensão entre transmissão e distribuição primária. |
 | **Surge Arresters** (Para-raios) | Proteção contra sobretensões transitórias de origem atmosférica e manobras. |
 | **Wave Traps** (Bobinas de Bloqueio) | Filtragem e injeção de sinais de telecomunicação na rede de transmissão. |
+
+---
+
+## 🎯 Detecção de Hotspots e Diagnóstico Normativo (NBR 15572 / NFPA 70B)
+
+Além de classificar o tipo de equipamento, o sistema executa a **termografia analítica em tempo real**:
+1. **Localização do Ponto Quente (*Hotspot*):** Identifica as coordenadas $(X, Y)$ exatas do pixel de temperatura máxima relativa e calcula a *bounding box* e a área em pixels da anomalia.
+2. **Estimativa de Elevação Térmica ($\Delta T$):** Extrapola o gradiente térmico entre o hotspot e a temperatura de referência do fundo.
+3. **Avaliação Normativa (NBR 15572 / NFPA 70B):** Atribui o nível de severidade e emite a ordem de ação recomendada com codificação de cores industrial (Verde = Normal, Amarelo = Atenção, Laranja = Grave, Vermelho = Crítico).
+
+![Inspeção com Hotspots e Diagnóstico Normativo](docs/figures/hotspot_inspections.png)
+
+### 📋 Critérios Normativos de Decisão (ABNT NBR 15572)
+
+| Nível de Severidade | $\Delta T$ sobre Referência | Ação Operacional Recomendada pela Norma |
+|---|:---:|---|
+| 🟢 **Normal (Aceitável)** | $\Delta T < 10^\circ\text{C}$ | Operação em condições adequadas. Manter rotina de inspeção periódica. |
+| 🟡 **Atenção (Alerta Inicial)** | $10^\circ\text{C} \le \Delta T < 25^\circ\text{C}$ | Início de sobreaquecimento por contato/carga. Inspecionar na próxima preventiva. |
+| 🟠 **Grave (Ação Programada)** | $25^\circ\text{C} \le \Delta T < 50^\circ\text{C}$ | Aquecimento significativo. Risco aos isoladores. Programar intervenção em 48h. |
+| 🔴 **Crítico (Intervenção Imediata)** | $\Delta T \ge 50^\circ\text{C}$ | **PERIGO IMINENTE!** Risco de queima/arco elétrico. Desligamento e reparo imediato. |
 
 ---
 
@@ -44,7 +65,7 @@ A distribuição por classe no dataset:
 
 ## 🧠 Espaço Latente DINOv2 (Projeção t-SNE 2D)
 
-O backbone **DINOv2 ViT-B/14** mapeia cada imagem térmica para um vetor de características denso de **768 dimensões** através do *CLS Token*. 
+O backbone **DINOv2 ViT-B/14** mapeia cada imagem térmica para um vetor denso de **768 dimensões** através do *CLS Token*. 
 
 A projeção dimensional via **t-SNE (2D)** evidencia a segregação natural dos equipamentos no espaço euclidiano:
 
@@ -92,13 +113,6 @@ A matriz de confusão abaixo reflete as **predições reais fora do fold (Out-of
 
 ![Matriz de Confusão Real](docs/figures/confusion_matrix.png)
 
-### 🔬 Análise dos 5 Casos de Falha Identificados:
-1. **Circuit Breakers → Disconnectors (1 erro):** Disjuntor em ângulo lateral com lâminas abertas assemelhando-se visualmente a uma seccionadora.
-2. **Surge Arresters → Wave Traps (1 erro):** Para-raios com topo cilíndrico confundido com a estrutura helicoidal de bobina de bloqueio.
-3. **Surge Arresters → Circuit Breakers (1 erro):** Haste vertical confundida com a coluna de pólo de um disjuntor.
-4. **Wave Traps → Power Transformers (1 erro):** Bobina em primeiro plano com transformador ao fundo no mesmo enquadramento térmico.
-5. **Wave Traps → Surge Arresters (1 erro):** Bobina de bloqueio em plano afastado.
-
 ---
 
 ## 📋 Métricas Reais por Equipamento (Sem Overfitting)
@@ -116,9 +130,13 @@ A matriz de confusão abaixo reflete as **predições reais fora do fold (Out-of
 
 ---
 
-## 🏗️ Arquitetura do Repositório
+## 🏛️ Engenharia de Software e Clean Code
 
-Seguindo rigorosamente os princípios de **Clean Code** e **SOLID**:
+O projeto foi refatorado aplicando estritamente os princípios de **Robert C. Martin (Uncle Bob)** e **SOLID**:
+- **SRP (Single Responsibility Principle):** Módulos pequenos (< 150 linhas) e focados em uma única responsabilidade.
+- **Dataclasses Imutáveis (`frozen=True`):** Estruturas como `DINOv2Config`, `HotspotLocation` e `ThermalDiagnosis` garantem integridade sem efeitos colaterais.
+- **Ausência de Números Mágicos:** Todos os hiperparâmetros e constantes normativas ficam encapsulados.
+- **Testes Unitários Limpos (F.I.R.S.T.):** Testes rápidos (executados em 0.01s), independentes e sem dependências externas.
 
 ```
 modelo-de-predicao-industrial-com-imagens-termicas/
@@ -126,7 +144,8 @@ modelo-de-predicao-industrial-com-imagens-termicas/
 ├── README.md                           # Documentação detalhada e auditoria de métricas
 ├── requirements.txt                    # Dependências do projeto
 ├── .gitignore                          # Ignora datasets brutos e binários pesados
-├── run_pipeline.py                     # Script para execução ponta-a-ponta do pipeline
+├── run_pipeline.py                     # Script do pipeline de treino e avaliação
+├── demo_inspection.py                  # Demonstração da inspeção industrial completa
 │
 ├── docs/
 │   └── figures/                        # Gráficos em alta resolução (300 DPI)
@@ -136,18 +155,26 @@ modelo-de-predicao-industrial-com-imagens-termicas/
 │       ├── classifier_comparison.png   # Boxplot comparativo dos 3 modelos (5-Fold)
 │       ├── confusion_matrix.png        # Matriz de confusão real Out-of-Fold
 │       ├── metrics_per_class.png       # Precisão, Recall e F1 por classe
-│       └── overfitting_analysis.png    # Gráfico de análise de gap de overfitting
+│       ├── overfitting_analysis.png    # Gráfico de análise de gap de overfitting
+│       └── hotspot_inspections.png     # Mosaico da inspeção com hotspots e NBR 15572
+│
+├── tests/
+│   └── test_thermal_analysis.py        # Bateria de testes unitários (F.I.R.S.T.)
 │
 ├── notebooks/
 │   ├── 01_preprocessing.ipynb          # Notebook didático: EDA e geração de splits
-│   └── 02_training.ipynb               # Notebook didático: DINOv2 + Classificação
+│   ├── 02_training.ipynb               # Notebook didático: DINOv2 + Classificação
+│   └── 03_hotspot_and_failure_prediction.ipynb # Notebook didático: Hotspots + NBR 15572
 │
 ├── src/
-│   ├── __init__.py                     # Interface do pacote
+│   ├── __init__.py                     # Interface pública do pacote
 │   ├── config.py                       # Dataclass imutável DINOv2Config
 │   ├── transforms.py                   # Pipeline canônico torchvision (Resize bicúbico + Norm)
-│   ├── dataset.py                    # Dataset PyTorch com safe loading de arquivos
-│   └── feature_extractor.py            # Extrator de embeddings DINOv2 ViT-B/14 (CUDA/CPU)
+│   ├── dataset.py                      # Dataset PyTorch com safe loading de arquivos
+│   ├── feature_extractor.py            # Extrator de embeddings DINOv2 ViT-B/14 (CUDA/CPU)
+│   ├── hotspot_detector.py             # Detector geométrico de pontos quentes em RGB
+│   ├── normative_rules.py              # Motor de regras NBR 15572 / NFPA 70B
+│   └── industrial_analyzer.py          # Orquestrador ponta-a-ponta de inspeção
 │
 ├── data/
 │   ├── raw/                            # Imagens térmicas originais organizadas por classe
@@ -171,25 +198,30 @@ cd modelo-de-predicao-industrial-com-imagens-termicas
 pip install -r requirements.txt
 ```
 
-### 2. Execução Automatizada (Pipeline Completo)
-Para processar os dados, extrair features, rodar o t-SNE, treinar os classificadores e exportar todos os gráficos:
+### 2. Executar os Testes Unitários
 ```bash
-python run_pipeline.py
+python -m unittest discover tests
 ```
 
-### 3. Execução Interativa via Jupyter Notebooks
-Se preferir executar passo a passo de forma didática:
-1. Abra e execute [`notebooks/01_preprocessing.ipynb`](notebooks/01_preprocessing.ipynb) para analisar os dados e gerar os splits.
-2. Abra e execute [`notebooks/02_training.ipynb`](notebooks/02_training.ipynb) para extrair os embeddings DINOv2 e comparar os classificadores.
+### 3. Executar Demonstração da Inspeção com Hotspots (NBR 15572)
+```bash
+python demo_inspection.py
+```
+
+### 4. Executar os Notebooks Didáticos
+1. [`notebooks/01_preprocessing.ipynb`](notebooks/01_preprocessing.ipynb) — Análise exploratória e splits.
+2. [`notebooks/02_training.ipynb`](notebooks/02_training.ipynb) — Extração DINOv2 e modelos.
+3. [`notebooks/03_hotspot_and_failure_prediction.ipynb`](notebooks/03_hotspot_and_failure_prediction.ipynb) — Detecção interativa de hotspots e diagnósticos de falha.
 
 ---
 
 ## 🛠️ Stack Tecnológica
 
 - **Visão Computacional & Deep Learning:** PyTorch, Torchvision, Meta DINOv2 ViT-B/14
+- **Termografia & Processamento de Imagens:** OpenCV, Pillow, NumPy
 - **Machine Learning & Validação:** Scikit-Learn (Logistic Regression, SVM, Random Forest, Stratified K-Fold, t-SNE)
-- **Visualização e Métricas:** Matplotlib, Seaborn
-- **Manipulação de Imagens & Dados:** Pillow, NumPy
+- **Visualização:** Matplotlib, Seaborn
+- **Qualidade de Software:** Clean Code, SOLID, Unittest (F.I.R.S.T.)
 
 ---
 

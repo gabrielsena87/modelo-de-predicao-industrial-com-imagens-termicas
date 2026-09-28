@@ -148,14 +148,6 @@ def step1_eda_and_splits(config: DINOv2Config, figures_dir: Path, processed_dir:
 
 def step2_extract_features(config: DINOv2Config, dataset: ThermalImageDataset, features_dir: Path):
     logger.info("=== PASSO 2: Extração de Features DINOv2 ViT-B/14 ===")
-    feat_file = features_dir / "features_dinov2.npy"
-    lbl_file = features_dir / "labels.npy"
-    if feat_file.exists() and lbl_file.exists():
-        logger.info("Features já extraídas encontradas em disco! Carregando cache...")
-        features = np.load(feat_file)
-        labels = np.load(lbl_file)
-        return features, labels, [], 0.0
-
     extractor = DINOv2FeatureExtractor(config)
 
     t0 = time.time()
@@ -165,8 +157,8 @@ def step2_extract_features(config: DINOv2Config, dataset: ThermalImageDataset, f
     logger.info(f"Extração finalizada em {elapsed:.2f}s ({elapsed / len(features):.3f}s/imagem).")
     logger.info(f"Matriz de embeddings: shape={features.shape}, dtype={features.dtype}")
 
-    np.save(feat_file, features)
-    np.save(lbl_file, labels)
+    np.save(features_dir / "features_dinov2.npy", features)
+    np.save(features_dir / "labels.npy", labels)
 
     return features, labels, paths, elapsed
 
@@ -214,7 +206,7 @@ def step4_train_and_evaluate(features: np.ndarray, labels: np.ndarray, class_nam
         ]),
         "SVM (RBF Kernel)": Pipeline([
             ("scaler", StandardScaler()),
-            ("clf", SVC(kernel="rbf", C=10.0, random_state=42))
+            ("clf", SVC(kernel="rbf", C=10.0, probability=True, random_state=42))
         ]),
         "Random Forest": Pipeline([
             ("scaler", StandardScaler()),
@@ -235,10 +227,7 @@ def step4_train_and_evaluate(features: np.ndarray, labels: np.ndarray, class_nam
     # Plot Comparação dos Modelos
     plt.figure(figsize=(8, 5), dpi=300)
     box_data = [cv_results[name] * 100 for name in classifiers]
-    try:
-        box = plt.boxplot(box_data, patch_artist=True, tick_labels=list(classifiers.keys()))
-    except TypeError:
-        box = plt.boxplot(box_data, patch_artist=True, labels=list(classifiers.keys()))
+    box = plt.boxplot(box_data, patch_artist=True, labels=list(classifiers.keys()))
     
     colors = ["#4575b4", "#74add1", "#abd9e9"]
     for patch, color in zip(box["boxes"], colors):
