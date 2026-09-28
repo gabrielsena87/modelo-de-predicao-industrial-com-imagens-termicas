@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dados e modelos (pesados demais para versionamento)
+data/raw/
+data/processed/
+outputs/features/*.npy
+outputs/models/*.pkl
+outputs/models/*.pt
+*.pt
+*.pth
+
+# Ambiente
+.env
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
