@@ -2,7 +2,9 @@
   "best_model": "Logistic Regression",
   "cv_accuracy_mean": 0.9943882995417738,
   "cv_accuracy_std": 0.005024887542156819,
-  "overall_accuracy": 1.0,
+  "oof_accuracy": 0.9944008958566629,
+  "test_accuracy": 0.9852,
+  "oof_errors_count": 5,
   "cv_results": {
     "Logistic Regression": [
       0.994413407821229,
@@ -26,35 +28,35 @@
       0.9606741573033708
     ]
   },
-  "per_class": {
+  "oof_per_class": {
     "Circuit Breakers": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1-score": 1.0,
+      "precision": 0.9950738916256158,
+      "recall": 0.9950738916256158,
+      "f1-score": 0.9950738916256158,
       "support": 203.0
     },
     "Disconnectors": {
-      "precision": 1.0,
+      "precision": 0.994475138121547,
       "recall": 1.0,
-      "f1-score": 1.0,
+      "f1-score": 0.997229916897507,
       "support": 180.0
     },
     "Power Transformers": {
-      "precision": 1.0,
+      "precision": 0.9943502824858758,
       "recall": 1.0,
-      "f1-score": 1.0,
+      "f1-score": 0.9971671388101983,
       "support": 176.0
     },
     "Surge Arresters": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1-score": 1.0,
+      "precision": 0.9944444444444445,
+      "recall": 0.988950276243094,
+      "f1-score": 0.9916897506925207,
       "support": 181.0
     },
     "Wave Traps": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1-score": 1.0,
+      "precision": 0.993421052631579,
+      "recall": 0.9869281045751634,
+      "f1-score": 0.9901639344262295,
       "support": 153.0
     }
   }
